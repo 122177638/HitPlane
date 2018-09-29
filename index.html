@@ -85,14 +85,14 @@
                     gameMenu.style.cssText = "width:80%;border:1px solid #ffffff;border-radius:5px;text-align:center;display:flex;flex-direction:column;margin:15% auto 0;box-shadow:0 0 0.1rem #cccccc;";
                 let gameMenuTitle = document.createElement('h2');
                     gameMenuTitle.innerHTML = game.gameName;
-                    gameMenuTitle.style.cssText = "color:#fff;font-weight:normal;font-size:0.52rem;margin:0.6rem 0";
+                    gameMenuTitle.style.cssText = "color:#fff;font-weight:normal;font-size:0.52rem;margin:0.4rem 0";
                 let gameMenuUl = document.createElement('ul');
                     gameMenuUl.style.cssText = "list-style:none;color:#fff;font-size:0.4rem;display:flex;flex-direction:column;justify-content:space-around;align-items:center;";
                     for(let i = 0; i < game.gamePattern.length; i++){
                         let gameMenuLi =  document.createElement('li');
                             gameMenuLi.innerHTML = game.gamePattern[i];
                             gameMenuLi.className = 'menu-item';
-                            gameMenuLi.style.cssText = "height:0.8rem;width:80%;background-color:#fff;color:#000;line-height:0.8rem;border-radius:0.12rem;margin:0.6rem auto;cursor: pointer;"
+                            gameMenuLi.style.cssText = "height:0.8rem;width:80%;background-color:#fff;color:#000;line-height:0.8rem;border-radius:0.12rem;margin:0.4rem auto;cursor: pointer;"
                             gameMenuUl.appendChild(gameMenuLi);
                     }
                 let gameMenuSmall = document.createElement('p');
