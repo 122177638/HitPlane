@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JS飞机大战</title>
+    <script>
+        (function (designWidth, maxWidth) {
+        var doc = document
+        var win = window
+        var docEl = doc.documentElement
+        var remStyle = document.createElement('style')
+        var tid
+        function refreshRem () {
+            var width = docEl.getBoundingClientRect().width
+            console.log(width)
+            maxWidth = maxWidth || 540
+            width > maxWidth && (width = maxWidth)
+            var rem = width * 100 / designWidth
+            remStyle.innerHTML = 'html{font-size:' + rem + 'px;}'
+        }
+
+        if (docEl.firstElementChild) {
+            docEl.firstElementChild.appendChild(remStyle)
+        } else {
+            var wrap = doc.createElement('div')
+            wrap.appendChild(remStyle)
+            doc.write(wrap.innerHTML)
+            wrap = null
+        }
+        // 要等 wiewport 设置好后才能执行 refreshRem，不然 refreshRem 会执行2次；
+        refreshRem()
+
+        win.addEventListener('resize', function () {
+            clearTimeout(tid) // 防止执行两次
+            tid = setTimeout(refreshRem, 300)
+        }, false)
+
+        win.addEventListener('pageshow', function (e) {
+            if (e.persisted) { // 浏览器后退的时候重新计算
+            clearTimeout(tid)
+            tid = setTimeout(refreshRem, 300)
+            }
+        }, false)
+
+        if (doc.readyState === 'complete') {
+            doc.body.style.fontSize = '16px'
+        } else {
+            doc.addEventListener('DOMContentLoaded', function (e) {
+            doc.body.style.fontSize = '16px'
+            }, false)
+        }
+        })(750, 750)
+    </script>
+    <style>
+        *{margin:0;padding:0;}
+    </style>
+</head>
+<body>
+    <script>
+        window.onload = function(){
+            game.exe();
+        }
+        // 创建游戏
+        let game = {
+            gameName: '飞机大战V1.0',
+            gamePatternIndex:0,
+            countNum:0,
+            gamePattern:['普通模式','困难模式','暴走模式','开挂模式'],
+            // 启动程序
+            exe(){
+                gameBox = document.createElement('div');
+                gameBox.style.cssText = "width:100vw;height:100vh;margin:0 auto;overflow:hidden;position:relative;background:url('img/sky1.jpg') no-repeat;background-size:100% 100%;";
+                document.body.appendChild(gameBox);
+                this.init();
+            },
+            // 初始化
+            init(){
+                game.countNum = 0;
+                gameBox.innerHTML = '';
+                // 开始菜单
+                let gameMenu = document.createElement('div');
+                    gameMenu.className = "menu-box"
+                    gameMenu.style.cssText = "width:80%;border:1px solid #ffffff;border-radius:5px;text-align:center;display:flex;flex-direction:column;margin:15% auto 0;box-shadow:0 0 0.1rem #cccccc;";
+                let gameMenuTitle = document.createElement('h2');
+                    gameMenuTitle.innerHTML = game.gameName;
+                    gameMenuTitle.style.cssText = "color:#fff;font-weight:normal;font-size:0.52rem;margin:0.6rem 0";
+                let gameMenuUl = document.createElement('ul');
+                    gameMenuUl.style.cssText = "list-style:none;color:#fff;font-size:0.4rem;display:flex;flex-direction:column;justify-content:space-around;align-items:center;";
+                    for(let i = 0; i < game.gamePattern.length; i++){
+                        let gameMenuLi =  document.createElement('li');
+                            gameMenuLi.innerHTML = game.gamePattern[i];
+                            gameMenuLi.className = 'menu-item';
+                            gameMenuLi.style.cssText = "height:0.8rem;width:80%;background-color:#fff;color:#000;line-height:0.8rem;border-radius:0.12rem;margin:0.6rem auto;cursor: pointer;"
+                            gameMenuUl.appendChild(gameMenuLi);
+                    }
+                let gameMenuSmall = document.createElement('p');
+                    gameMenuSmall.style.cssText = "font-size:14px;color:#ffffff;text-align:center;margin:0 0 20px;"
+                    gameMenuSmall.innerText = "本游戏由一言不合就开车的Anles免费提供"
+                    gameMenu.appendChild(gameMenuTitle);
+                    gameMenu.appendChild(gameMenuUl);
+                    gameMenu.appendChild(gameMenuSmall);
+                    gameBox.appendChild(gameMenu);
+                    game.selectPattern(gameBox);
+            },
+            // 选择难度
+            selectPattern(gameBox){
+                const gameMenuLi = document.querySelectorAll('.menu-item');
+                const gameMenuUl = document.querySelector('.menu-box');
+                gameMenuLi.forEach(function(item,index){
+                    item.addEventListener('touchend',function(){
+                        gameMenuUl.parentNode.removeChild(gameMenuUl);
+                        game.gamePatternIndex = index;
+                        game.startGame(gameBox);
+                    },false)
+                })
+            },
+            // 开始游戏
+            startGame(gameBox){
+                let plane = game.wePlane(gameBox);
+                game.planeMove(gameBox,plane)
+                game.launchBullet(gameBox,plane)
+                game.enemy(gameBox,plane);
+            },
+            // 我方战机
+            wePlane(gameBox){
+                let plane = new Image();
+                plane.src="img/plane.png"
+                plane.style.cssText = `left:50%;bottom:0;position:absolute;width:1.2rem;height:0.72rem;margin-left:-0.6rem;`
+                gameBox.appendChild(plane)
+                return plane; 
+            },
+            // 移动战机
+            planeMove(gameBox,plane){
+                let leftMin = 0;
+                let leftMax = gameBox.offsetWidth - plane.offsetWidth;
+                let topMin = 0;
+                let topMax = gameBox.offsetHeight - plane.offsetHeight;
+                plane.ontouchmove = function(e){
+                    e.preventDefault();
+                    let x = event.touches[0].pageX;
+                    let y = event.touches[0].pageY;
+                    let centerX = x - plane.offsetWidth/2;
+                    let centerY = y - plane.offsetHeight/2;
+                    centerY = Math.min( centerY , topMax );
+                    centerY = Math.max( centerY , topMin );
+                    centerX = Math.min( centerX , leftMax );
+                    centerX = Math.max( centerX , leftMin );
+                    plane.style.cssText = `top:${centerY}px;left:${centerX}px;position:absolute;width:1.2rem;height:0.72rem;`
+                }
+            },
+            // 发射子弹
+            launchBullet(gameBox,plane){
+                let speed; // 发射速度
+                let bulletSpeed; //子弹移动速度
+                switch (game.gamePatternIndex) {
+                    case 0:
+                        speed = 300;
+                        bulletSpeed = 10;
+                        break;
+                    case 1:
+                        speed = 250;
+                        bulletSpeed = 15;
+                        break;
+                    case 2:
+                        speed = 100;
+                        bulletSpeed = 20;
+                        break;
+                    case 3:
+                        speed = 13;
+                        bulletSpeed = 10;
+                        break;
+                    default:
+                        peed = 200;
+                        bulletSpeed = 10;
+                        break;
+                }
+                this.bulletTimer = setInterval(function(){
+                    let bullet = new Image();
+                    bullet.src = "img/bullet.png";
+                    bullet.className = 'bullet-item';
+                    bullet.width = game.refreshRem(0.12);
+                    bullet.height = game.refreshRem(0.44);
+                    let top  = plane.offsetTop - plane.offsetHeight;
+                    let left = plane.offsetLeft + plane.offsetWidth / 2 - bullet.width / 2;
+                    bullet.style.cssText = `top:${top}px;left:${left}px;position:absolute;`;
+                    gameBox.appendChild(bullet)
+                    bullet.timer = setInterval(function(){
+                        let top = bullet.offsetTop - bulletSpeed;
+                        bullet.style.top = top+'px';
+                        if(bullet.offsetTop < bullet.height){
+                            clearInterval(bullet.timer);
+                            bullet.parentNode.removeChild(bullet);
+                        }
+                        // 判断子弹是否击中目标
+                        let enemy = document.querySelectorAll('.enemy-item');
+                        enemy.forEach(function(item,index){
+                            if(game.boom(item,bullet)){
+                                item.src = "img/boom.png"
+                                item.isBoom = true; //确定炸毁后不对战机造成伤害
+                                clearInterval(bullet.timer)
+                                bullet.parentNode.removeChild(bullet);  
+                                item.classList.remove('enemy-item');
+                                game.countNum++;
+                                setTimeout(function(){
+                                    clearInterval(item.timer);
+                                    if(item.parentNode){item.parentNode.removeChild(item);}
+                                },300)
+                            }
+                        })
+                    },13)
+                },speed)
+            },
+            // 生成敌军
+            enemy(gameBox,plane){
+                let enemySpeed; //敌军生成速度
+                let enemyMoveSpeed; //敌军移动速度
+                switch (game.gamePatternIndex) {
+                    case 0:
+                        enemySpeed = 800;
+                        enemyMoveSpeed = 3;
+                        break;
+                    case 1:
+                        enemySpeed = 600;
+                        enemyMoveSpeed = 4;
+                        break;
+                    case 2:
+                        enemySpeed = 2000;
+                        enemyMoveSpeed = 15;
+                        break;
+                    case 3:
+                        enemySpeed = 200;
+                        enemyMoveSpeed = 6;
+                        break;
+                    default:
+                        enemySpeed = 1000
+                        enemyMoveSpeed = 2
+                        break;
+                }
+                this.enemyTimer = setInterval(function(){
+                    let enemy = new Image();
+                    enemy.src = "img/enemy.png";
+                    enemy.className = "enemy-item";
+                    enemy.width = game.refreshRem(0.56);
+                    enemy.height = game.refreshRem(0.6);
+                    let leftMin = enemy.width / 2;
+                    let leftMax = gameBox.offsetWidth - enemy.width / 2 - plane.offsetWidth / 2;
+                    let randomX = Math.round(Math.random() * leftMax + leftMin);
+                    enemy.style.cssText = `top:0;left:${randomX}px;position:absolute;`
+                    gameBox.appendChild(enemy)
+                    enemy.timer = setInterval(function(){
+                        enemy.style.top = enemy.offsetTop + enemyMoveSpeed + 'px';
+                        if(enemy.offsetTop > gameBox.offsetHeight){
+                            clearInterval(enemy.timer)
+                            if(enemy){enemy.parentNode.removeChild(enemy);}
+                            if(!enemy.isBoom && !plane.isBoom){
+                                game.gameOver(gameBox,plane,enemy)
+                            }
+                        }
+                        // 判断敌机是否撞上战机
+                        if(game.boom(enemy,plane)){
+                            if(!enemy.isBoom && !plane.isBoom){
+                                game.gameOver(gameBox,plane,enemy)
+                                // plane.parentNode.removeChild(plane);
+                                // enemy.parentNode.removeChild(enemy);
+                            } 
+                        }
+                    },13)
+                },enemySpeed)
+            }, 
+            // 游戏结束
+            gameOver(gameBox,plane,enemy){
+                plane.src = "img/boom2.png";
+                enemy.src = "img/boom.png";
+                plane.isBoom = true; // 确定炸毁后不对敌机造成伤害
+                clearInterval(game.bulletTimer)
+                clearInterval(game.enemyTimer);
+                clearInterval(enemy.timer);
+                plane.ontouchmove = null; 
+                game.count(gameBox)
+            },
+            count(gameBox){
+                let countBox = document.createElement('div');
+                countBox.style.cssText = "width:80%;position:absolute;left:50%;margin-left:-40%;border:1px solid #ffffff;border-radius:0.12rem;color:#ffffff;box-shadow:0 0 0.1rem #cccccc;top:30%;"
+                countBox.innerHTML = `
+                    <h2 style="font-size:22px;text-align:center;padding:0.3rem 0.3rem 0;">Game Over</h2>
+                    <div style="display:flex;padding:0.4rem;box-sizing:border-box;">
+                        <p style="flex:1">得分:</p>
+                        <p style="flex:1;text-align:right;">${game.countNum}</p>
+                    </div>
+                    <div style="display:flex;padding:0.4rem;box-sizing:border-box;">
+                        <p style="flex:1">你超越了:</p>
+                        <p style="flex:1;text-align:right;">99%</p>
+                    </div>
+                    <div onclick="game.init()" style="width:50%;height:0.8rem;line-height:0.8rem;text-align:center;background-color:#3B104B;margin:0.1rem auto 0.3rem;border-radius:0.12rem;font-weight:bold;">重新开始</div>
+                `
+                gameBox.appendChild(countBox)
+            },
+            // 关卡
+            // checkPoint(gameBox){
+            //     let checkBox = document.createElement('h2');
+            //     checkBox.className = "checkBox"
+            //     checkBox.style.cssText = "font-size:1rem ;color:#FFF;position:absolute;left:50%;top:40%;margin-left:-40%;width:80%;text-align:center;transition:all 1s;"
+            //     checkBox.innerHTML = "Game Over";
+            //     gameBox.appendChild(checkBox);
+            // },
+            // 碰撞检测
+            boom(obj1,obj2){
+
+                let T1 = obj1.offsetTop;
+                let B1 = T1 + obj1.offsetHeight;
+                let L1 = obj1.offsetLeft;
+                let R1 = L1 + obj1.offsetWidth;
+                
+                let T2 = obj2.offsetTop;
+                let B2 = T2 + obj2.offsetHeight;
+                let L2 = obj2.offsetLeft;
+                let R2 = L2 + obj2.offsetWidth;
+                
+                if(R2 < L1 || L2 > R1 || B2 < T1 || T2 > B1){
+                    return false;
+                }else{
+                    return true;
+                }
+            },
+            // // rem 转 px (750*750)
+            refreshRem (rem) {
+                let width = document.documentElement.getBoundingClientRect().width;
+                let maxWidth = 750 || 540
+                width > 750 && (width = 750)
+                let rpx = width * 100 / 750
+                return rpx * rem;
+            }
+        }
+    </script>
+</body>
+</html>
